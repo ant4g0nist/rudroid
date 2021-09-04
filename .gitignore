@@ -1,0 +1,4 @@
+resources/rootfs/
+resources/Hello/obj/
+resources/Hello/libs/
+code/target/
