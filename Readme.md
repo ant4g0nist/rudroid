@@ -3,25 +3,25 @@
 ## Introduction
 Rudroid - this might arguably be one of the worst Android emulators possible. In this blog, we'll write an emulator that can run a 'Hello World' Android ELF binary. While doing this, we will learn how to go about writing our own emulators.
 
-Writing an emulator is an awesome way to study and probably master the low-level details of system we are trying to emulate. I assume you have some working knowledge of Rust, a linux machine with Rust installed or a Docker engine and a lot of patience to go through documentations of system calls, file formats and more.
+Writing an emulator is an awesome way to study and probably master the low-level details of the system we are trying to emulate. I assume you have some working knowledge of Rust, a Linux machine with Rust installed or a Docker engine, and a lot of patience to go through the documentation of system calls, file formats, and more.
 
 &nbsp;
 
-Topics we need to understand while writing an Rudroid:
+Topics we need to understand while writing Rudroid:
 - Basic Android Operating System Architecture
 - What are system calls
 - How system calls are handled in AArch64
 - How memory mapping works
 - How the operating system loads an ELF into memory and runs it
-- How we can emulate the behaviour of Operating system to load an ELF into memory and run
+- How we can emulate the behavior of Operating system to load an ELF into memory and run
 
 Let's start by reading the definition of Android:
 
-> Android is an open source, Linux-based software stack created for a wide array of devices and form factors. The following diagram shows the major components of the Android platform.
+> Android is an open-source, Linux-based software stack created for a wide array of devices and form factors. The following diagram shows the major components of the Android platform.
 &nbsp;
 
 ## Kernel Architecture
-A basic architecture of Linux kernel:
+The basic architecture of Linux kernel:
 
 <img src="./imgs/linux-kernel-architecture.png" alt="Kernel Architecture">
 
@@ -33,7 +33,7 @@ Core functionalities of a kernel are:
 - Block I/O communication
 - File System Management
 
-For writing an emulator that just runs an Android ELF binary, the most interesting kernel components are Memory Management, File System Management, Process Management and Interrupt handling and System Call Interface via which ELF communicate with Kernel.
+For writing an emulator that just runs an Android ELF binary, the most interesting kernel components are Memory Management, File System Management, Process Management and Interrupt handling, and System Call Interface via which ELF communicates with Kernel.
 
 
 <img src="./imgs/kernel-architecture.png" alt="Kernel Architecture">
@@ -42,7 +42,7 @@ For writing an emulator that just runs an Android ELF binary, the most interesti
 > <b>Signals</b>: The kernel uses signals to call into a process. For example, signals are
 used to notify a process of certain faults, such as division by zero.
 
-> <b>Processes and Scheduler</b>: Creates, schedules and manages processes.
+> <b>Processes and Scheduler</b>: Creates, schedules, and manages processes.
 
 > <b>Virtual Memory</b>: Allocates and manages virtual memory for processes.
 
@@ -64,16 +64,16 @@ used to notify a process of certain faults, such as division by zero.
 
 
 ## How do Emulators do what they do?
-An emulator usually has an mmu to manage guest's memory requests, an instruction interpreter (decode -> translate -> execute), signal handlers, interrupt handlers.
+An emulator usually has an MMU to manage guest's memory requests, an instruction interpreter (decode -> translate -> execute), signal handlers, interrupt handlers.
 
-These are the steps a emulator usually does:
+These are the steps an emulator usually does:
 * load the target binary to memory
 * figure out the ISA of target binary
-* if emulator supports the ISA, initialise CPU
-* initialise signal handlers
-* initialise interrupt handlers
-* initialise syscall handlers
-* start cpu loop
+* if emulator supports the ISA, initialize CPU
+* initialize signal handlers
+* initialize interrupt handlers
+* initialize syscall handlers
+* start CPU loop
 
 What happens inside a  CPU Loop:
 * fetch opcode to execute at Program Counter
@@ -89,7 +89,7 @@ What happens inside a  CPU Loop:
 
 ## Rudroid's Architecture
 
-So, our Rudroid is just going to be a binary that implements an ELF loader, memory management, system call interface, filesystem. The final Rudroid's binary should take the ELF that prints 'Hello World' to stdout as command line argument and execute it on the host. The command should look something like:
+So, our Rudroid is just going to be a binary that implements an ELF loader, memory management, system call interface, filesystem. The final Rudroid's binary should take the ELF that prints 'Hello World' to stdout as command-line argument and execute it on the host. The command should look something like this:
 
 ```bash
 # ./Rudroid hello_world.elf
@@ -102,9 +102,9 @@ We are going to run our Rudroid on a Linux machine. This is how our Rudroid's ar
 
 ## ELF loading process
 
-We'll try not to dwell too much into the details of ELF file format. Take a look at this comprehensive ELF standard [here](https://refspecs.linuxfoundation.org/elf/elf.pdf).
+We'll try not to dwell too much into the details of the ELF file format. Take a look at this comprehensive ELF standard [here](https://refspecs.linuxfoundation.org/elf/elf.pdf).
 
-Executable (ELFs) and shared object files (libraries) statically represent programs. When you decide to run a binary, the operating system starts by setting up a new process for the program to run in. 
+Executable (ELFs) and shared object files (libraries) statically represent programs. When you decide to run a binary, the operating system starts by setting up a new process for the program to run. 
 
 ELFs are composed of three major components: 
 - an executable header (`Ehdr`)
@@ -138,12 +138,12 @@ typedef struct {
 typedef struct elf64_phdr {
   Elf64_Word p_type;
   Elf64_Word p_flags;
-  Elf64_Off p_offset;		/* Segment file offset */
-  Elf64_Addr p_vaddr;		/* Segment virtual address */
-  Elf64_Addr p_paddr;		/* Segment physical address */
-  Elf64_Xword p_filesz;		/* Segment size in file */
-  Elf64_Xword p_memsz;		/* Segment size in memory */
-  Elf64_Xword p_align;		/* Segment alignment, file & memory */
+  Elf64_Off p_offset;       /* Segment file offset */
+  Elf64_Addr p_vaddr;       /* Segment virtual address */
+  Elf64_Addr p_paddr;       /* Segment physical address */
+  Elf64_Xword p_filesz;     /* Segment size in file */
+  Elf64_Xword p_memsz;      /* Segment size in memory */
+  Elf64_Xword p_align;      /* Segment alignment, file & memory */
 } Elf64_Phdr;
 ```
 &nbsp;
@@ -152,16 +152,16 @@ typedef struct elf64_phdr {
 `Shdr` as defined in `/usr/include/elf.h`
 ```c
 typedef struct elf64_shdr {
-  Elf64_Word sh_name;		/* Section name, index in string tbl */
-  Elf64_Word sh_type;		/* Type of section */
-  Elf64_Xword sh_flags;		/* Miscellaneous section attributes */
-  Elf64_Addr sh_addr;		/* Section virtual addr at execution */
-  Elf64_Off sh_offset;		/* Section file offset */
-  Elf64_Xword sh_size;		/* Size of section in bytes */
-  Elf64_Word sh_link;		/* Index of another section */
-  Elf64_Word sh_info;		/* Additional section information */
-  Elf64_Xword sh_addralign;	/* Section alignment */
-  Elf64_Xword sh_entsize;	/* Entry size if section holds table */
+  Elf64_Word sh_name;       /* Section name, index in string tbl */
+  Elf64_Word sh_type;       /* Type of section */
+  Elf64_Xword sh_flags;     /* Miscellaneous section attributes */
+  Elf64_Addr sh_addr;       /* Section virtual addr at execution */
+  Elf64_Off sh_offset;      /* Section file offset */
+  Elf64_Xword sh_size;      /* Size of section in bytes */
+  Elf64_Word sh_link;       /* Index of another section */
+  Elf64_Word sh_info;       /* Additional section information */
+  Elf64_Xword sh_addralign; /* Section alignment */
+  Elf64_Xword sh_entsize;   /* Entry size if section holds table */
 } Elf64_Shdr;
 ```
 
@@ -170,22 +170,22 @@ The kernel only really cares about Ehdr and Phdrs and only three types of progra
 - PT_INTERP         : Segment holding .interp section
 - PT_GNU_STACK      : flag to set program's stack to executable
 
-The ELF loader in kernel starts loading ELF by first examining the ELF header to check the validity of ELF. After this, the loader now loops over the program header entries, looking for PT_LOAD and PT_INTERP. For every PT_LOAD entry, the loader maps memory at `load_address + phdr_header.p_vaddr` of size `phdr_header.mem_size` and copies the contents of the segment into allocated memory. If PT_INTERP is found, the loader again parses this as an ELF file and maps it into memory and keeps track of the entrypoints of the main ELF file and interpreter's ELF file.
+The ELF loader in the kernel starts loading ELF by first examining the ELF header to check the validity of ELF. After this, the loader now loops over the program header entries, looking for PT_LOAD and PT_INTERP. For every PT_LOAD entry, the loader maps memory at `load_address + phdr_header.p_vaddr` of size `phdr_header.mem_size` and copies the contents of the segment into allocated memory. If PT_INTERP is found, the loader again parses this as an ELF file and maps it into memory, and keeps track of the entrypoints of the main ELF file and interpreter's ELF file.
 
-Once this is done, the loader starts setting up and populating the stack with `auxiliary vector` (ELF tables), environment variables and command line arguments passed to the ELF. An ELF auxiliary vector is an (id, value) pair that describes useful information about the program being run and the environment it is running in.
+Once this is done, the loader starts setting up and populating the stack with `auxiliary vector` (ELF tables), environment variables, and command-line arguments passed to the ELF. An ELF auxiliary vector is an (id, value) pair that describes useful information about the program being run and the environment it is running in.
 
-For this, we need a ELF parser in rust. We can either write our own ELF parser or use an already existing crate (https://github.com/nrc/xmas-elf).
+For this, we need an ELF parser in rust. We can either write our own ELF parser or use an already existing crate (https://github.com/nrc/xmas-elf).
 
-Before we could start writing an ELF loader, we also need a memory managemer as we have to map the ELF into memory, manage stack etc. Let's look at how a memory manager works.
+Before we could start writing an ELF loader, we also need a memory manager as we have to map the ELF into memory, manage stack, etc. Let's look at how a memory manager works.
 
 ## Memory Management (MMU)
 
-> Linux memory management subsystem is responsible, as the name implies, for managing the memory in the system. This includes implementation of virtual memory and demand paging, memory allocation both for kernel internal structures and user space programs, mapping of files into processes address space and many other cool things.
+> Linux memory management subsystem is responsible, as the name implies, for managing the memory in the system. This includes implementation of virtual memory and demand paging, memory allocation both for kernel internal structures and userspace programs, mapping of files into processes address space, and many other cool things.
 &nbsp;
 
 It provides functionality to `map` and `unmap` memory allocations. We have to implement these functionalities:
-- map memory at given location or of given size
-- unmap memory at given location or of given size
+- map memory at a given location or of a given size
+- unmap memory at a given location or of a given size
 - read from memory
 - write to memory
 - manage permissions of the memory
@@ -199,10 +199,7 @@ void *mmap(void *addr, size_t length, int prot, int flags,
 ````
 
 ```
- mmap() creates a new mapping in the virtual address space of the
-       calling process.  The starting address for the new mapping is
-       specified in addr.  The length argument specifies the length of
-       the mapping (which must be greater than 0).
+ mmap() creates a new mapping in the virtual address space of the calling process.  The starting address for the new mapping is specified in addr.  The length argument specifies the length of the mapping (which must be greater than 0).
 ```
 
 Memory protections:
@@ -308,18 +305,18 @@ Used by an OS to call the hypervisor, not available at EL0.
 Causes an exception targeting EL3.
 Used by an OS or hypervisor to call the EL3 firmware, not available at EL0.
 
-<img src='/img/aarch64-system-call.jpeg' alt='AArch64 system call'>
+<img src='./imgs/aarch64-system-call.jpeg' alt='AArch64 system call'>
 &nbsp;
 
-InAArch64, the system call number is passed in `X8` register and return value in `X0` register. We will use Unicorn's hooks to hook onto this SVC calls and execute the corresponding system call and return the results.
+InAArch64, the system call number is passed in `X8` register and the return value in `X0` register. We will use Unicorn's hooks to hook onto these SVC calls and execute the corresponding system call and return the results.
 
 ## AArch64 Instruction Emulation
 
-Since writing emulating all the AArch64 instruction is a tedious job, we will make use of Unicorn Engine for emulating the instructions. We will still see how it actually works.
+Since writing emulating all the AArch64 instructions is a tedious job, we will make use of Unicorn Engine for emulating the instructions. We will still see how it works.
 
 ## impl rudroid 
 
-Finally we'll start writing the code for our Rudroid. Let's see how easy or complex it will be.
+Finally, we'll start writing the code for our Rudroid. Let's see how easy or complex it will be.
 
 I'm going to use a Linux Docker container on my Apple M1 as the host for running Rudroid. 
 
@@ -365,9 +362,9 @@ $ run.sh
 root@9346e6664ae9:/home/code#
 ```
 
-Here we are installing the required rust, unicorn-engine, capstone-engine and kapstone-engine. 
+Here we are installing the required rust, unicorn-engine, capstone-engine, and keystone-engine. 
 
-We will extend `Unicorn` impl from [Unicorn Rust crate](https://github.com/unicorn-engine/unicorn/blob/next/bindings/rust/) and add system call handlers, file system management etc. I took the only the required files and discarded remaining. 
+We will extend `Unicorn` impl from [Unicorn Rust crate](https://github.com/unicorn-engine/unicorn/blob/next/bindings/rust/) and add system call handlers, file system management, etc. I took only the required files and discarded the remaining. 
 
 ```c
 ➜  src git:(main) ✗ tree core/unicorn/ 
@@ -381,7 +378,7 @@ We will extend `Unicorn` impl from [Unicorn Rust crate](https://github.com/unico
 ```
 
 #### Directory structure
-Lets setup the below directory structure:
+Let's set up the below directory structure:
 
 <img src="./imgs/tree.png" alt="Tree">
 
@@ -406,7 +403,7 @@ capstone="0.10.0"
 nix = "0.22.1"
 ```
 
-So i deleted the Unicorn `new` implementation and `struct` definition and added a new struct definition inside `core/rudroid.rs`. Our new implementation declares a new struct called Emulator that keeps track of details of the Elf file, filesystem and Unicorn hooks.
+So I deleted the Unicorn `new` implementation and `struct` definition and added a new struct definition inside `core/rudroid.rs`. Our new implementation declares a new struct called Emulator that keeps track of details of the Elf file, filesystem, and Unicorn hooks.
 
 ### **`core/rudroid.rs`**
 ```rust
@@ -535,9 +532,9 @@ impl<D> Emulator<D>
 }
 ```
 
-Replaced all the implementations of `impl UnicornHandler` with `impl<D> Emulator<D>`. This way, we already have all the capabilities of `Unicorn` like memory management, hooks, instruction interpreter, cpu loop etc. I think this is called Lazy programming? 🙊
+Replaced all the implementations of `impl UnicornHandler` with `impl<D> Emulator<D>`. This way, we already have all the capabilities of `Unicorn` like memory management, hooks, instruction interpreter, CPU loop, etc. I think this is called Lazy programming? 🙊
 
-As explained in the ELF Loader section above, we parse the ELF using `xmas-elf` crate, go through the program headers and map the respective segments into the memory. We also setup Stack for the program.
+As explained in the ELF Loader section above, we parse the ELF using `xmas-elf` crate, go through the program headers, and map the respective segments into the memory. We also set up Stack for the program.
 
 ### **`core/loaders/elfLoader.rs`**
 ```rust
@@ -871,7 +868,7 @@ pub fn add_hooks(emu: &mut rudroid::Emulator<i64>) {
     emu.add_mem_hook(unicorn_const::HookType::MEM_READ_UNMAPPED, 1, 0, callback_mem_error).unwrap();
 ```
 
-And in `hook_syscall` function, we read the `x8` register from the execution context, match it with syscalls of Android, and try to emulate the syscall. Instead of implementing every syscall in our code, we can just forward some of them to the host system, get the return values and forward it to the emulated binary. 
+And in `hook_syscall` function, we read the `x8` register from the execution context, match it with syscalls of Android, and try to emulate the syscall. Instead of implementing every syscall in our code, we can just forward some of them to the host system, get the return values and forward them to the emulated binary. 
 
 ### **`core/android/syscalls/mod.rs`**
 ```rust
@@ -954,7 +951,7 @@ impl<D> Emulator<D> {
     }
 }
 ```
-And in `main.rs` file, we parse the command line arguments to Rudroid, take target 'Hello World' ELF and `rootfs` (/system/ directory copied from android device) folder as 2 arguments, create an Emulator, load the ELF into memory and start the CPU loop.
+And in `main.rs` file, we parse the command line arguments to Rudroid, take target 'Hello World' ELF and `rootfs` (/system/ directory copied from an android device) folder as 2 arguments, create an Emulator, load the ELF into memory and start the CPU loop.
 
 ### **`main.rs`**
 ```rust
@@ -1018,7 +1015,7 @@ Lets' compile and link it with Unicorn/Keystone/capstone.
 
 ```Makefile
 build:
-	RUSTFLAGS="-L /usr/lib/ -lunicorn -L /usr/local/lib/ -lkeystone -Awarnings" cargo run -- /setup/hello  /setup/rootfs/
+    RUSTFLAGS="-L /usr/lib/ -lunicorn -L /usr/local/lib/ -lkeystone -Awarnings" cargo run -- /setup/hello  /setup/rootfs/
 ```
 &nbsp;
 
@@ -1026,7 +1023,7 @@ Now compile and execute with `make`:
 
 <img src="./imgs/make.png" alt="Compile and execute with make">
 
-You can notice in the screenshot above that Emulator panicked with `'Syscall __NR_getpid not implemented yet!'`. So, lets implement __NR_getpid syscall. If you check the documents of getpid (`__NR_getpid`) documented here `https://man7.org/linux/man-pages/man2/getpid.2.html`, just returns the PID of the executing process. Since here we are executing the binary in our own emulator, we can return whatever number as PID in the response. Lets return 1337 as pid.
+You can notice in the screenshot above that Emulator panicked with `'Syscall __NR_getpid not implemented yet!'`. So, let's implement __NR_getpid syscall. If you check the documents of getpid (`__NR_getpid`) documented here `https://man7.org/linux/man-pages/man2/getpid.2.html`, just returns the PID of the executing process. Since here we are executing the binary in our own emulator, we can return whatever number as PID in the response. Let's return 1337 as PID.
 
 So we create a file `unistd.rs` inside `syscalls` folder and implement __NR_getpid syscall.
 
@@ -1116,11 +1113,14 @@ And we `make` again.
 
 <img src="./imgs/make3.png" alt="Compile and execute with make">
 
-You see where I am going? Just kept doing this for few more syscalls till I saw the output 'Hello World' 💃🕺💃🕺
+Do you see where I am going? Just keep doing this for few more syscalls till I saw the output 'Hello World' 💃🕺💃🕺
 
 <img src="./imgs/final.png" alt="Hello World from the binary">
 
-Uffff. That's a long post. Hope it's useful to someone. Please [DM](https://twitter.com/ant4g0nist) me if I made any booboo.
+Uffff. That's a long post. Hope it's useful to someone. Please [DM](https://twitter.com/ant4g0nist) me if I made any boo-boo.
+
+&nbsp;
+
 
 ## Resources
 - [gamozolabs](https://www.youtube.com/user/gamozolabs)
