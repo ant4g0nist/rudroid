@@ -38,13 +38,18 @@ fn main()
     
     let endian =  elf.header.pt1.data();
     let mut emu = core::rudroid::Emulator::new( &elf_filename, &rootfs, &mut elf, endian, program_args, program_env, 0, true).expect("Emulator initialisation failed");
+      
+    context_title(Some("Emulator created"))
     
     //set up hooks
     core::hooks::add_hooks(&mut emu);
 
+    context_title(Some("Running linker..."))
     //run linker to load dependencies of ELF and then run the main from ELF
     emu.run_linker();
+    
+    context_title(Some("Executing target ELF..."))
     emu.run_elf();
-
-    context_title(Some("Emulator creted"))
+    
+    context_title(Some("The End"))
 }
