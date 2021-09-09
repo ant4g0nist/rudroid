@@ -174,7 +174,7 @@ The ELF loader in the kernel starts loading ELF by first examining the ELF heade
 
 Once this is done, the loader starts setting up and populating the stack with `auxiliary vector` (ELF tables), environment variables, and command-line arguments passed to the ELF. An ELF auxiliary vector is an (id, value) pair that describes useful information about the program being run and the environment it is running in.
 
-For this, we need an ELF parser in rust. We can either write our own ELF parser or use an already existing crate (https://github.com/nrc/xmas-elf).
+For this, we need an ELF parser in rust. We can either write our own ELF parser or use an already existing [xmas-elf crate](https://github.com/nrc/xmas-elf).
 
 Before we could start writing an ELF loader, we also need a memory manager as we have to map the ELF into memory, manage stack, etc. Let's look at how a memory manager works.
 
